@@ -185,10 +185,12 @@ def form_bar(tb, sn):
 #fig.update_layout(barmode='stack')
 
 
-# In[13]:
+# In[36]:
 
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
+               meta_tags= [{'name': 'viewport',
+                            'content': 'width=device-width, initial-scale=1'}])
 app.title = 'COVID-19@INDIA'
 server= app.server
 ##################################################################################
@@ -198,43 +200,81 @@ app.layout= html.Div([
         html.Div([
             html.H3(html.B('COVID-19')),
             html.H5('@INDIA')
-        ], style= {'width': '15%', 'display': 'inline-block',
+        ], className='d-none d-sm-block', style= {'width': '16%', 'display': 'inline-block',
+                   'text-align': 'left', 'color': 'rgb(0, 74, 140)', 'padding-left': '2%'}),
+        html.Div([
+            html.H3(html.B('COVID-19@INDIA'))
+        ], className= 'col-12 d-block d-sm-none', style= {'display': 'inline-block',
+                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+        ##########################################################################
+        html.Div([
+            html.H3(html.B(c)),
+            html.H5('confirmed')
+        ], className='col-md-2 col-6 d-block d-sm-none', style= {'display': 'inline-block',
                    'text-align': 'left', 'color': 'rgb(0, 74, 140)'}),
         html.Div([
             html.H3(html.B(c)),
             html.H5('confirmed')
-        ], style= {'width': '10%', 'display': 'inline-block', 
+        ], className='d-none d-sm-block', style= {'width': '11%', 'display': 'inline-block',
+                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+        ##########################################################################
+        html.Div([
+            html.H3(html.B(r)),
+            html.H5('recovered')
+        ], className='col-md-2 col-6 d-block d-sm-none', style= {'display': 'inline-block',
                    'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
         html.Div([
             html.H3(html.B(r)),
             html.H5('recovered')
-        ], style= {'width': '12%', 'display': 'inline-block',
+        ], className='d-none d-sm-block', style= {'width': '12%', 'display': 'inline-block',
                    'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+        ##########################################################################
         html.Div([
             html.H3(html.B(d)),
             html.H5('deceased')
-        ], style= {'width': '12%', 'display': 'inline-block',
+        ], className='col-md-2 col-6 d-block d-sm-none', style= {'display': 'inline-block',
+                   'text-align': 'left', 'color': 'rgb(0, 74, 140)'}),
+        html.Div([
+            html.H3(html.B(d)),
+            html.H5('deceased')
+        ], className='d-none d-sm-block', style= {'width': '12%', 'display': 'inline-block',
+                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+        ##########################################################################
+        html.Div([
+            html.H3(html.B(n)),
+            html.H5('states')
+        ], className='col-md-2 col-6 d-block d-sm-none', style= {'display': 'inline-block',
                    'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
         html.Div([
             html.H3(html.B(n)),
             html.H5('states')
-        ], style= {'width': '8%', 'display': 'inline-block',
+        ], className='d-none d-sm-block', style= {'width': '8%', 'display': 'inline-block',
                    'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
-        html.Div([
-        ], style= {'width': '3%', 'display': 'inline-block'}),        
+        ##########################################################################        
         html.Div([
             html.Div([
-                dcc.Dropdown(id= 'helpdd', options= hnames,
+                dcc.Dropdown(id= 'helpdd1', options= hnames,
                              placeholder= 'Search helplines', clearable= False)
             ], style= {'width': '45%', 'display': 'inline-block', 'padding-bottom': '2%'}),
             html.Div([                
-                html.H3(html.B(id= 'hname')),
-                html.H6(id= 'hmail'),
-            ], style= {'width': '55%', 'padding-left': '7%',
+                html.H3(html.B(id= 'hname1', className= 'd-none d-sm-block')),
+                html.H6(id= 'hmail', className= 'd-none d-sm-block'),
+            ], style= {'width': '55%', 'padding-left': '6%',
                        'display': 'inline-block', 'text-align': 'left'})
-        ], style= {'width': '40%', 'display': 'inline-block',
+        ], className='d-none d-sm-block', style= {'width': '40%', 'display': 'inline-block', 'padding-left': '2%',
                    'text-align': 'left', 'color': 'rgb(0, 74, 140)'}),
-    ], style= {'padding-left': '3%', 'width': '100%', 'padding-top': '1%'}),   
+        html.Div([
+            html.Div([dcc.Dropdown(id= 'helpdd2', options= hnames,
+                                   placeholder= 'Search helplines', clearable= False)],
+                     className='col-6 d-block d-sm-none',
+                style= {'display': 'flex', 'align-items': 'right',
+                        'justify-content': 'right', 'display': 'inline-block'}),
+            html.Div([html.H3(html.B(id= 'hname2'))], className='col-md-2 col-6 d-block d-sm-none',
+                style= {'display': 'inline-block',
+                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'})           
+        ], className= 'row', style= {'padding-left': '5%', 'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+    ], className= 'row',
+        style= {'padding-left': '3%', 'width': '100%', 'padding-top': '1%'}),   
     ######################################################################
     ########################## Header ends here ##########################
     ######################################################################
@@ -243,9 +283,9 @@ app.layout= html.Div([
         html.Div([
             dcc.Dropdown(id= 'statep', options= states, value= df.index[0], clearable= False,
                          style= {'width': '90%', 
-                                 'padding-left': '30%', 'padding-right': '10%'}),
+                                 'padding-left': '25%', 'padding-right': '10%'}),
             dcc.Graph(id= 'Pie1', config= {'displayModeBar': False})
-        ], style= {'padding-top': '1%', 'width': '41%'}, className='six columns'),
+        ], style= {'padding-top': '1%', 'width': '41%'}, className='col-md-5 col-12'),
         html.Div([
             html.Div([
                 html.Div([
@@ -259,24 +299,31 @@ app.layout= html.Div([
                     ], style= {'display': 'inline-block'})
                 ], style= {'display': 'inline-block'}),  
                 html.Div([html.H4('states affected by COVID-19',
-                                  style= {'padding-bottom': '3%'})],
+                                  style= {'padding-bottom': '3%', 'color': 'rgb(0, 74, 140)'})],
                          style= {'display': 'inline-block', 'padding-left': '3%'})
             ], style= {'padding-left': '20%'}),
             dcc.Graph(id= 'Bar1', config= {'displayModeBar': False})
-        ], style= {'padding-top': '1%', 'width': '58%'}, className='six columns')
+        ], style= {'padding-top': '1%', 'width': '58%', 'padding-left': '5%'}, className='col-md-7 col-12')
     ], className='row')    
 ], style= {'fontFamily': 'Helvetica',
            'background': 'linear-gradient(to right, rgba(0, 135, 255, 0) 0%, rgba(0, 135, 255, 0.4) 100%)'})
 ##################################################################################
-@app.callback(Output('hname', 'children'),
-             [Input('helpdd', 'value')])
+@app.callback(Output('hname1', 'children'),
+             [Input('helpdd1', 'value')])
 def update_hname(val):
     for i in range(len(hphone)):
         if hphone[i]['label']==val:
-            return hphone[i]['value']        
+            return hphone[i]['value']  
+##########################################        
+@app.callback(Output('hname2', 'children'),
+             [Input('helpdd2', 'value')])
+def update_hname(val):
+    for i in range(len(hphone)):
+        if hphone[i]['label']==val:
+            return hphone[i]['value']          
 ##########################################
 @app.callback(Output('hmail', 'children'),
-             [Input('helpdd', 'value')])
+             [Input('helpdd1', 'value')])
 def update_hmail(val):
     for i in range(len(hloc)):
         if hloc[i]['label']==val:
