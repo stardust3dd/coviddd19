@@ -5,6 +5,7 @@
 
 
 import pandas as pd
+from datetime import date 
 
 # Scraping
 import requests 
@@ -119,6 +120,18 @@ wb_help= ' WB Helpline: 033-24312600'
 # In[11]:
 
 
+updt= 'Updated on ' + str(date.today())
+
+
+# In[12]:
+
+
+updt
+
+
+# In[13]:
+
+
 states= []
 for i in df.index.tolist():
     states.append({'label': i, 'value': i})
@@ -141,7 +154,7 @@ def form_pie(state):
     return figp1
 
 
-# In[12]:
+# In[14]:
 
 
 nos= []
@@ -185,7 +198,7 @@ def form_bar(tb, sn):
 #fig.update_layout(barmode='stack')
 
 
-# In[36]:
+# In[15]:
 
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
@@ -253,19 +266,19 @@ app.layout= html.Div([
         ##########################################################################        
         html.Div([
             html.Div([
-                dcc.Dropdown(id= 'helpdd1', options= hnames,
-                             placeholder= 'Search helplines', clearable= False)
+                dcc.Dropdown(id= 'helpdd1', options= hnames, clearable= False,
+                             value= hnames[0]['value'], )
             ], style= {'width': '45%', 'display': 'inline-block', 'padding-bottom': '2%'}),
             html.Div([                
                 html.H3(html.B(id= 'hname1', className= 'd-none d-sm-block')),
-                html.H6(id= 'hmail', className= 'd-none d-sm-block'),
+                html.H6(updt),
             ], style= {'width': '55%', 'padding-left': '6%',
                        'display': 'inline-block', 'text-align': 'left'})
         ], className='d-none d-sm-block', style= {'width': '40%', 'display': 'inline-block', 'padding-left': '2%',
                    'text-align': 'left', 'color': 'rgb(0, 74, 140)'}),
         html.Div([
-            html.Div([dcc.Dropdown(id= 'helpdd2', options= hnames,
-                                   placeholder= 'Search helplines', clearable= False)],
+            html.Div([dcc.Dropdown(id= 'helpdd2', options= hnames, 
+                                   value= hnames[0]['value'], clearable= False)],
                      className='col-6 d-block d-sm-none',
                 style= {'display': 'flex', 'align-items': 'right',
                         'justify-content': 'right', 'display': 'inline-block'}),
@@ -275,9 +288,7 @@ app.layout= html.Div([
         ], className= 'row', style= {'padding-left': '5%', 'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
     ], className= 'row',
         style= {'padding-left': '3%', 'width': '100%', 'padding-top': '1%'}),   
-    ######################################################################
     ########################## Header ends here ##########################
-    ######################################################################
     html.Hr(style= {'border-top': '10px dotted rgb(0, 74, 140)', 'width': '95%'}),
     html.Div([
         html.Div([
@@ -298,10 +309,10 @@ app.layout= html.Div([
                                 style= {'width': '100%'})
                     ], style= {'display': 'inline-block'})
                 ], style= {'display': 'inline-block'}),  
-                html.Div([html.H4('states affected by COVID-19',
+                html.Div([html.H4('states affected',
                                   style= {'padding-bottom': '3%', 'color': 'rgb(0, 74, 140)'})],
                          style= {'display': 'inline-block', 'padding-left': '3%'})
-            ], style= {'padding-left': '20%'}),
+            ], style= {'padding-left': '25%'}),
             dcc.Graph(id= 'Bar1', config= {'displayModeBar': False})
         ], style= {'padding-top': '1%', 'width': '58%', 'padding-left': '5%'}, className='col-md-7 col-12')
     ], className='row')    
@@ -322,12 +333,12 @@ def update_hname(val):
         if hphone[i]['label']==val:
             return hphone[i]['value']          
 ##########################################
-@app.callback(Output('hmail', 'children'),
-             [Input('helpdd1', 'value')])
-def update_hmail(val):
-    for i in range(len(hloc)):
-        if hloc[i]['label']==val:
-            return hloc[i]['value']     
+#@app.callback(Output('hmail', 'children'),
+#             [Input('helpdd1', 'value')])
+#def update_hmail(val):
+#    for i in range(len(hloc)):
+#        if hloc[i]['label']==val:
+#            return hloc[i]['value']     
 ##########################################
 @app.callback(Output('Pie1', 'figure'),
              [Input('statep', 'value')])
