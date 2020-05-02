@@ -5,6 +5,8 @@
 
 
 import pandas as pd
+pd.options.display.max_columns= None
+pd.options.display.max_rows= None
 from datetime import date 
 
 # Scraping
@@ -19,6 +21,7 @@ import plotly.express as px
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
+import dash_daq as daq
 from dash.dependencies import Input, Output
 from plotly.subplots import make_subplots
 
@@ -52,6 +55,8 @@ headers= ['Sno', 'State', 'Confirmed', 'Recovery', 'Death']
 
 df= pd.DataFrame(stats, columns= headers).set_index('State')
 df.drop(['Sno'], axis= 1, inplace= True)
+df= df.replace({'#': ''}, regex=True)
+df= df.replace({'*': ''})
 df= df.astype(int)
 df.loc['India']= df.sum()
 
@@ -174,44 +179,54 @@ for i in df.index.tolist():
     states.append({'label': i, 'value': i})
 
 
-# 
-# #############################################################################
-# def form_pie(state):
-#     figp1= go.Figure(data= [go.Pie(labels= ['Active', 'Recoveries', 'Deaths'], pull=[0, 0, 0.4],
-#                               values= [df.loc[state]['Confirmed']-df.loc[state]['Recovery']-df.loc[state]['Death'],
-#                                        df.loc[state]['Recovery'], df.loc[state]['Death']],
-#                               textinfo= 'value', hoverinfo='percent', insidetextorientation='radial',
-#                               marker= {'colors': ['rgba(0, 74, 140, 0.4)', 'rgba(0, 74, 140, 0.7)','rgba(0, 74, 140, 1)'],
-#                                       'line': {'color': 'rgba(0, 74, 140, 1)', 'width': 2}}                            
-#                               ),               
-#                         ],
-#                      layout= go.Layout(yaxis= {'dtick': 1, 'showgrid': True}, paper_bgcolor='rgba(0,0,0,0)',
-#                                   barmode= 'stack', plot_bgcolor='rgba(0,0,0,0)',
-#                                   xaxis =  {'showgrid': True},
-#                                       ))
-#     figp1.update_layout(margin= dict(t=0, b=0, l=0, r=0), #legend= dict(x=.08, y=1.7),
-#                        legend_orientation="h")
-#     return figp1
-
 # In[13]:
 
 
-indiats= 'https://raw.githubusercontent.com/covid19india/api/master/csv/latest/case_time_series.csv'
+indiats= 'https://api.covid19india.org/csv/latest/case_time_series.csv'
+sw= 'https://api.covid19india.org/csv/latest/state_wise.csv'
+sw= pd.read_csv(sw)
+dsw= 'https://api.covid19india.org/csv/latest/state_wise_daily.csv'
+dsw= pd.read_csv(dsw, )
 dfts= pd.read_csv(indiats)
 dfts['Date']= dfts['Date'].str[0:6]
-#############################################################################
+#sw['Date']= sw['Date'].str[0:6]
+dsw['Date']= dsw['Date'].str[0:6].str.replace('-', ' ')
+#dsw['Date']
+
+
+# In[14]:
+
+
+statewise_tested_numbers_data= 'https://api.covid19india.org/csv/latest/statewise_tested_numbers_data.csv'
+stnd= pd.read_csv(statewise_tested_numbers_data)
+stndd= stnd.groupby(['State']).last().reset_index()
+stndd.set_index(['State'], inplace= True)
+stndd.loc['India', 'Total Tested']= stndd['Total Tested'].sum()
+stndd.loc['India', 'Positive']= stndd['Positive'].sum()
+stndd.loc['India', 'Negative']= stndd['Negative'].sum()
+stndd.loc['India', 'Unconfirmed']= stndd['Unconfirmed'].sum()
+stndd.loc['India', 'Population (Source: UIDAI)']= stndd['Population (Source: UIDAI)'].sum()
+stndd.loc['India', 'Tests per thousand']= stndd['Tests per thousand'].mean()
+
+stndd.loc['India', 'Test positivity rate']= round((stndd.loc['India', 'Positive']/stndd.loc['India', 'Total Tested'])*100, 2)
+stndd.loc['India', 'Test positivity rate']= str(stndd.loc['India', 'Test positivity rate']) + '%'
+
+
+# In[15]:
+
+
 dates= []
 for i, j in enumerate(dfts['Date'].tolist()):
     dates.append({'label': j, 'value': i})
 #############################################################################    
-def get_ts(dt1, dt2):
+def get_cts(dt1, dt2):
     df= dfts[dfts.index.to_series().between(dt1, dt2)]
     cnfrm= go.Scatter(x= df['Date'], y= df['Total Confirmed'], line= {'color': 'rgb(0, 74, 140)'},
-                      mode= 'lines+markers', name= 'Confirmed')
+                  mode= 'lines+markers', name= 'Confirmed')
     rcvr= go.Scatter(x= df['Date'], y= df['Total Recovered'], line= {'color': 'rgb(0, 74, 140)'},
-                     mode= 'lines+markers', name= 'Recovered')
+                 mode= 'lines+markers', name= 'Recovered')
     dth= go.Scatter(x= df['Date'], y= df['Total Deceased'], line= {'color': 'rgb(0, 74, 140)'},
-                                   mode= 'lines+markers', name= 'Deceased')
+                mode= 'lines+markers', name= 'Deceased')
 
     fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03,
                        row_titles=("Confirmed", "Recovered", "Deceased"))
@@ -222,9 +237,35 @@ def get_ts(dt1, dt2):
                       showlegend= False, height=350, width=1000, paper_bgcolor='rgba(0,0,0,0)')
     
     return fig
+#############################################################################    
+def get_dts(dt1, dt2):
+    df= dfts[dfts.index.to_series().between(dt1, dt2)]
+    cnfrm= go.Bar(x= df['Date'], y= df['Daily Confirmed'], name= 'Confirmed',
+                  text= df['Daily Confirmed'], textposition='auto',
+                  marker= {'color': 'rgba(0, 74, 140, 0.4)',
+                           'line': {'color': 'rgba(0, 74, 140, 1)', 'width': 2}})
+    rcvr= go.Bar(x= df['Date'], y= df['Daily Recovered'], name= 'Recovered',
+                text= df['Daily Recovered'], textposition='auto',
+                marker= {'color': 'rgba(0, 74, 140, 0.4)',
+                           'line': {'color': 'rgba(0, 74, 140, 1)', 'width': 2}})
+    dth= go.Bar(x= df['Date'], y= df['Daily Deceased'], name= 'Deceased',
+               text= df['Daily Deceased'], textposition='auto',
+               marker= {'color': 'rgba(0, 74, 140, 0.4)',
+                           'line': {'color': 'rgba(0, 74, 140, 1)', 'width': 2}})
+
+    fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03,
+                       row_titles=("Confirmed", "Recovered", "Deceased"))
+    fig.append_trace(cnfrm, 1, 1)
+    fig.append_trace(rcvr, 2, 1)
+    fig.append_trace(dth, 3, 1)
+    fig.update_layout(plot_bgcolor= 'rgba(0,0,0,0)', margin= {'t':0, 'b':0, 'l':0, 'r':50},
+                      showlegend= False, height=350, width=1000, paper_bgcolor='rgba(0,0,0,0)',                     
+                                 )
+    
+    return fig
 
 
-# In[14]:
+# In[16]:
 
 
 nos= []
@@ -234,6 +275,8 @@ for i in [3, 5, 7, 10]:
 tb= []
 tb.append({'label': 'Top', 'value': 'Top'})
 tb.append({'label': 'Bottom', 'value': 'Bottom'})
+#############################################################################
+legend_pos= {'x': 0, 'y': 0.7, 'traceorder': 'normal'}
 ############################################################################# 
 def form_bar(tb, sn):
     if tb=='Top':
@@ -262,29 +305,30 @@ def form_bar(tb, sn):
                                       barmode= 'stack', plot_bgcolor='rgba(0,0,0,0)',
                                       xaxis =  {'showgrid': True},
     ))
-    figb1.update_layout(margin= dict(t=0, b=0, l=0, r=50), legend= dict(x=.2, y=1.2),
-                       legend_orientation="h")
+    figb1.update_layout(margin= dict(t=0, b=0, l=0, r=50), legend= dict(x= 0.5, y= 0.5, traceorder= 'normal'),
+                       legend_orientation="h", height=350,)
     return figb1
 #fig.update_layout(barmode='stack')
 
 
-# In[15]:
+# In[17]:
 
 
+################################ Tab styling ################################
 tabs_style = {'height': '44px'}
 tab_style = {'padding': '8px', 'color': 'rgb(0, 74, 140)', 'fontFamily': 'Helvetica'}
 tab_selected_style = {
     'borderTop': '2px solid #004a8c',
     'borderBottom': '2px solid #004a8c',
-    'backgroundColor': 'rgba(0,0,0,0)',
-    'color': 'rgb(0, 74, 140)',
+    'backgroundColor': 'rgba(0,74,140, 1)',
+    'color': 'rgb(255, 255, 255)',
     'padding': '8px',
     'fontWeight': 'bold',
     'fontFamily': 'Helvetica'
 }
 
 
-# In[ ]:
+# In[22]:
 
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
@@ -295,11 +339,11 @@ server= app.server
 ##################################################################################
 ##################################################################################
 app.layout= html.Div([
+    
     html.Div([
         ##########################################################################
         ###################### temp header ######################
         ##########################################################################
-        html.Div([], className= ''),
         html.Div([
             html.H3(html.B('COVID-19')),
             dcc.Dropdown(id= 'state', options= states, clearable= False,
@@ -383,7 +427,102 @@ app.layout= html.Div([
     ########################## Header ends here ##########################
     html.Div([
         html.Div([
-            dcc.Tabs(value='tab1', children=[              
+            
+            dcc.Tabs(value='tab3', children=[     
+                
+                dcc.Tab(label= 'stats', value= 'tab3', children= [
+                    html.Div([
+                        html.Iframe(id= 'smap', height= '420', width= '100%',
+                                    style= {'border': 'None'})
+                    ], style= {'width': '45%', 'display': 'inline-block',
+                              'padding-top': '1%'}),
+                    html.Div([
+                        
+                        html.Div([
+                            html.Div([
+                                html.H1(html.B(id= 'cnfrb')),
+                                html.H5('confirmed')
+                            ], style= {'width': '33%', 'display': 'inline-block',
+                                       'text-align': 'right', }),
+                            html.Div([
+                                html.H1(html.B(id= 'rcvrb')),
+                                html.H5('recovered')
+                            ], style= {'width': '33%', 'display': 'inline-block',
+                                        'text-align': 'right', }),                            
+                            html.Div([
+                                html.H1(html.B(id= 'dthb')),
+                                html.H5('deceased')
+                            ], style= { 'display': 'inline-block', #'padding-left': '45%',
+                                       'width': '33%', 'text-align': 'right', })
+                        ], style= {'width': '100%'}),
+                        
+                        html.Div([
+                            html.Div([
+                                html.H2(html.B(id= 'tes')),
+                                html.H6('total tested')
+                            ], style= {'width': '30%', 'display': 'inline-block',
+                                       'text-align': 'right', }),                                                        
+                            html.Div([
+                                html.H2(html.B(id= 'neg')),
+                                html.H6('tested negative')
+                            ], style= {'width': '25%', 'display': 'inline-block',
+                                       'text-align': 'right', }),                            
+                            
+                            html.Div([
+                                html.H2(html.B(id= 'pos')),
+                                html.H6('tested positive')
+                            ], style= {'width': '25%', 'display': 'inline-block',
+                                       'text-align': 'right', }),
+                            
+                            html.Div([
+                                html.H2(html.B(id= 'uncn')),
+                                html.H6('unconfirmed')
+                            ], style= {'width': '20%', 'display': 'inline-block',
+                                       'text-align': 'right', }),
+                            
+                        ], style= {'width': '100%', 'padding-top': '3%'}),
+                        
+                        html.Div([
+                            html.Div([
+                                html.H2(html.B(id= 'pop')),
+                                html.H6('population')
+                            ], style= {'width': '45%', 'display': 'inline-block',
+                                       'text-align': 'right', }),                                                        
+                            html.Div([
+                                html.H2(html.B(id= 'tpt')),
+                                html.H6('tests per 1000')
+                            ], style= {'width': '25%', 'display': 'inline-block',
+                                       'text-align': 'right', }),                            
+                            
+                            html.Div([
+                                html.H2(html.B(id= 'tpr')),
+                                html.H6('positivity rate')
+                            ], style= {'width': '30%', 'display': 'inline-block',
+                                       'text-align': 'right', }), 
+                            
+                        ], style= {'width': '100%', 'padding-top': '3%'}),
+                        
+                        html.Div([
+                            html.Div([
+                                html.H3(html.B('central helpline: +91-11-23978046'))
+                            ], style= {'width': '100%', 'display': 'inline-block',
+                                       'text-align': 'right',}),
+                            html.Div([
+                                html.H3(html.B('email helpline: ncov2019@gov.in'))
+                            ], style= {'width': '100%', 'display': 'inline-block',
+                                       'text-align': 'right',}),
+                            html.Div([
+                                html.H3(html.B('state helpline: 104'))
+                            ], style= {'width': '100%', 'display': 'inline-block',
+                                       'text-align': 'right',}),
+                        ], style= {'width': '100%', 'padding-top': '3%'})
+                        
+                    ], style= {'width': '55%', 'display': 'inline-block', 'align': 'justify',
+                              'padding-top': '1%', 'color': 'rgb(0, 74, 140)'})
+                    
+                ], style=tab_style, selected_style=tab_selected_style),
+                
+                
                                 
                 dcc.Tab(label='figures', value='tab1', children= [
                     html.Div([
@@ -407,10 +546,13 @@ app.layout= html.Div([
                                'padding-left': '5%'},)
                 ], style=tab_style, selected_style=tab_selected_style),
                 
+                
+                
                 dcc.Tab(label='trends', value='tab2', children= [
                     html.Div([
                         html.Div([
-                            html.Div([
+                            html.Div([                            
+                                
                                 html.Div([html.H4('epidemic curve between',
                                               style= {'color': 'rgb(0, 74, 140)'})],
                                      style= {'display': 'inline-block',
@@ -418,21 +560,39 @@ app.layout= html.Div([
                                 html.Div([                
                                 dcc.Dropdown(id= 'dt1', options= dates,
                                              value= dates[0]['value'], clearable= False)
-                                ], style= {'display': 'inline-block', 'padding-left': '3%',
+                                ], style= {'display': 'inline-block', 'padding-left': '2%',
                                           'width': '15%'}),
                                 html.Div([html.H4('and',
-                                              style= {'padding-bottom': '3%',
+                                              style= {'padding-bottom': '2%',
+                                                      'color': 'rgb(0, 74, 140)'})],
+                                     style= {'display': 'inline-block',
+                                             'padding-left': '2%'}),
+                                
+                                html.Div([
+                                dcc.Dropdown(id= 'dt2', options= dates,
+                                             value= dates[-1]['value'], clearable= False)
+                                ], style= {'display': 'inline-block', 'padding-left': '2%',
+                                          'width': '15%'}),
+                                
+                                html.Div([html.H4('(cumulative',
+                                              style= {'padding-bottom': '2%', 'padding-top': '2%',
                                                       'color': 'rgb(0, 74, 140)'})],
                                      style= {'display': 'inline-block',
                                              'padding-left': '3%'}),
                                 
                                 html.Div([
-                                dcc.Dropdown(id= 'dt2', options= dates,
-                                             value= dates[-1]['value'], clearable= False)
-                                ], style= {'display': 'inline-block', 'padding-left': '3%',
-                                          'width': '15%'})
+                                    daq.ToggleSwitch(id= 'ts', value= False, 
+                                                     color="rgb(0, 74, 140)", size= 40)
+                                ], style= {'display': 'inline-block', 'padding-left': '2%',
+                                          }),
+                                
+                                html.Div([html.H4('daily)',
+                                              style= {'padding-bottom': '2%',
+                                                      'color': 'rgb(0, 74, 140)'})],
+                                     style= {'display': 'inline-block',
+                                             'padding-left': '2%'}),
                             ]),                              
-                        ], style= {'padding-left': '20%', }),
+                        ], style= {'padding-left': '0%', }),
                         dcc.Graph(id= 'Line1', config= {'displayModeBar': False})
                     ], style= {'padding-top': '1%', 'width': '100%'}, )
                 ], style=tab_style, selected_style=tab_selected_style),
@@ -442,10 +602,15 @@ app.layout= html.Div([
                        "background": "rgba(0,0,0,0)"},),
         ]),       
     ], style= {'width': '95%', 'padding-left': '5%', 'padding-top': '02%'})    
-], style= {'fontFamily': 'Helvetica',
-           'background': 'linear-gradient(to right, rgba(0, 135, 255, 0) 0%, rgba(0, 135, 255, 0.4) 100%)'})
+], style= {'fontFamily': 'Helvetica', 'height': '100v', 'padding-bottom': '5%',
+           'background': 'linear-gradient(to bottom, rgba(99, 212, 230, 0) 0%, rgba(99, 212, 230, 1) 100%)'})
 ##################################################################################
 @app.callback(Output('cnfrm', 'children'),
+             [Input('state', 'value')])
+def get_confirm(val):
+    return df.loc[val]['Confirmed']
+##########################################
+@app.callback(Output('cnfrb', 'children'),
              [Input('state', 'value')])
 def get_confirm(val):
     return df.loc[val]['Confirmed']
@@ -455,10 +620,58 @@ def get_confirm(val):
 def get_confirm(val):
     return df.loc[val]['Recovery']
 ##########################################
+@app.callback(Output('rcvrb', 'children'),
+             [Input('state', 'value')])
+def get_confirm(val):
+    return df.loc[val]['Recovery']
+##########################################
 @app.callback(Output('dth', 'children'),
              [Input('state', 'value')])
 def get_confirm(val):
     return df.loc[val]['Death']
+##########################################
+@app.callback(Output('dthb', 'children'),
+             [Input('state', 'value')])
+def get_confirm(val):
+    return df.loc[val]['Death']
+##########################################
+@app.callback(Output('tes', 'children'),
+             [Input('state', 'value')])
+def get_confirm(val):
+    return stndd.loc[val]['Total Tested']
+##########################################
+@app.callback(Output('pos', 'children'),
+             [Input('state', 'value')])
+def get_confirm(val):
+    return stndd.loc[val]['Positive']
+##########################################
+@app.callback(Output('neg', 'children'),
+             [Input('state', 'value')])
+def get_confirm(val):
+    return stndd.loc[val]['Negative']
+##########################################
+@app.callback(Output('uncn', 'children'),
+             [Input('state', 'value')])
+def get_confirm(val):
+    return stndd.loc[val]['Unconfirmed']
+##########################################
+##########################################
+@app.callback(Output('pop', 'children'),
+             [Input('state', 'value')])
+def get_confirm(val):
+    return stndd.loc[val]['Population (Source: UIDAI)']
+##########################################
+##########################################
+@app.callback(Output('tpr', 'children'),
+             [Input('state', 'value')])
+def get_confirm(val):
+    return stndd.loc[val]['Test positivity rate']
+##########################################
+##########################################
+@app.callback(Output('tpt', 'children'),
+             [Input('state', 'value')])
+def get_confirm(val):
+    return round(stndd.loc[val]['Tests per thousand'], 2)
 ##########################################
 @app.callback(Output('stts', 'children'),
              [Input('state', 'value')])
@@ -473,7 +686,7 @@ def get_confirm(val):
 def get_confirm(val):
     if val=='India':
         return 'states'
-    return 'State'
+    return 'state'
 ##########################################
 @app.callback(Output('hname1', 'children'),
              [Input('helpdd1', 'value')])
@@ -496,10 +709,11 @@ def update_hname(val):
 #        if hloc[i]['label']==val:
 #            return hloc[i]['value']     
 ##########################################
-#@app.callback(Output('Pie1', 'figure'),
-#             [Input('statep', 'value')])
-#def update_pie(state):
-#    return form_pie(state)
+@app.callback(Output('smap', 'srcDoc'),
+             [Input('state', 'value')])
+def render_smap(state):
+    state= 'states/'+state+'.html'
+    return open(state, 'r').read()
 ##########################################
 @app.callback(Output('Bar1', 'figure'),
              [Input('tb', 'value'), Input('sn', 'value')])
@@ -507,12 +721,20 @@ def update_bar(tb, sn):
     return form_bar(tb, sn)
 ##########################################
 @app.callback(Output('Line1', 'figure'),
-             [Input('dt1', 'value'), Input('dt2', 'value')])
-def update_bar(dt1, dt2):
-    return get_ts(dt1, dt2)
+             [Input('dt1', 'value'), Input('dt2', 'value'), Input('ts', 'value')])
+def update_bar(dt1, dt2, ts):
+    if (ts):
+        return get_dts(dt1, dt2)
+    return get_cts(dt1, dt2)
 ##################################################################################
 if __name__=='__main__':
     app.run_server()
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
