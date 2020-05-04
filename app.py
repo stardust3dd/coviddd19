@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[4]:
 
 
 import pandas as pd
@@ -26,7 +26,7 @@ from dash.dependencies import Input, Output
 from plotly.subplots import make_subplots
 
 
-# In[2]:
+# In[5]:
 
 
 extract_contents = lambda row: [x.text.replace('\n', '') for x in row] 
@@ -44,13 +44,13 @@ for row in all_rows:
         stats.append(stat)
 
 
-# In[3]:
+# In[6]:
 
 
 headers= ['Sno', 'State', 'Confirmed', 'Recovery', 'Death']
 
 
-# In[4]:
+# In[7]:
 
 
 df= pd.DataFrame(stats, columns= headers).set_index('State')
@@ -61,7 +61,7 @@ df= df.astype(int)
 df.loc['India']= df.sum()
 
 
-# In[5]:
+# In[8]:
 
 
 n= len(df) - 1
@@ -70,14 +70,14 @@ d= df['Death'].tail(1)[0]
 r= df['Recovery'].tail(1)[0]
 
 
-# In[6]:
+# In[9]:
 
 
 df_a= df.drop(['India']).sort_values(['Confirmed'])
 df_d= df.drop(['India']).sort_values(['Confirmed'], ascending= False)
 
 
-# In[7]:
+# In[10]:
 
 
 hnames= []
@@ -88,7 +88,7 @@ hnames.append({'label': 'PG Hospital', 'value': 'pg'})
 hnames.append({'label': 'R G Kar', 'value': 'rg'})
 
 
-# In[8]:
+# In[11]:
 
 
 hphone= []
@@ -100,7 +100,7 @@ hphone.append({'label': 'rg', 'value': '033-25557656'})
 hphone.append({'label': 'nb', 'value': '0353 258 5478'})
 
 
-# In[9]:
+# In[12]:
 
 
 hloc= []
@@ -112,7 +112,7 @@ hloc.append({'label': 'rg', 'value': 'KB Sarani, Kolkata 700004'})
 hloc.append({'label': 'nb', 'value': 'Sushruta Nagar, Siliguri 734012'})
 
 
-# In[10]:
+# In[13]:
 
 
 heading1= 'COVID-19 @ INDIA'
@@ -124,7 +124,7 @@ wb_help= ' WB Helpline: 033-24312600'
 nb_help= ' NBMC: 0353 258 5478'
 
 
-# In[11]:
+# In[14]:
 
 
 st_ab= {
@@ -170,7 +170,7 @@ st_ab= {
 }
 
 
-# In[12]:
+# In[15]:
 
 
 updt= 'updated on ' + str(date.today())
@@ -179,7 +179,7 @@ for i in df.index.tolist():
     states.append({'label': i, 'value': i})
 
 
-# In[13]:
+# In[16]:
 
 
 indiats= 'https://api.covid19india.org/csv/latest/case_time_series.csv'
@@ -194,25 +194,34 @@ dsw['Date']= dsw['Date'].str[0:6].str.replace('-', ' ')
 #dsw['Date']
 
 
-# In[14]:
+# In[21]:
 
 
 statewise_tested_numbers_data= 'https://api.covid19india.org/csv/latest/statewise_tested_numbers_data.csv'
 stnd= pd.read_csv(statewise_tested_numbers_data)
 stndd= stnd.groupby(['State']).last().reset_index()
+stndd['Population (Source: covid19india)'].replace({',': ''}, regex= True, inplace= True)
 stndd.set_index(['State'], inplace= True)
 stndd.loc['India', 'Total Tested']= stndd['Total Tested'].sum()
 stndd.loc['India', 'Positive']= stndd['Positive'].sum()
 stndd.loc['India', 'Negative']= stndd['Negative'].sum()
 stndd.loc['India', 'Unconfirmed']= stndd['Unconfirmed'].sum()
-stndd.loc['India', 'Population (Source: UIDAI)']= stndd['Population (Source: UIDAI)'].sum()
+stndd['Population (Source: covid19india)']= stndd['Population (Source: covid19india)'].dropna().astype(int)
+stndd.loc['India', 'Population (Source: covid19india)']= stndd['Population (Source: covid19india)'].sum()
 stndd.loc['India', 'Tests per thousand']= stndd['Tests per thousand'].mean()
 
 stndd.loc['India', 'Test positivity rate']= round((stndd.loc['India', 'Positive']/stndd.loc['India', 'Total Tested'])*100, 2)
 stndd.loc['India', 'Test positivity rate']= str(stndd.loc['India', 'Test positivity rate']) + '%'
 
 
-# In[15]:
+# In[22]:
+
+
+tnid= 'https://api.covid19india.org/csv/latest/tested_numbers_icmr_data.csv'
+tnidf= pd.read_csv(tnid)
+
+
+# In[23]:
 
 
 dates= []
@@ -233,7 +242,9 @@ def get_cts(dt1, dt2):
     fig.append_trace(cnfrm, 1, 1)
     fig.append_trace(rcvr, 2, 1)
     fig.append_trace(dth, 3, 1)
+    fig.update_xaxes(dtick= 7)
     fig.update_layout(plot_bgcolor= 'rgba(0,0,0,0)', margin= {'t':0, 'b':0, 'l':0, 'r':50},
+                      hovermode= 'closest', hoverdistance= 50000, 
                       showlegend= False, height=350, width=1000, paper_bgcolor='rgba(0,0,0,0)')
     
     return fig
@@ -258,14 +269,17 @@ def get_dts(dt1, dt2):
     fig.append_trace(cnfrm, 1, 1)
     fig.append_trace(rcvr, 2, 1)
     fig.append_trace(dth, 3, 1)
-    fig.update_layout(plot_bgcolor= 'rgba(0,0,0,0)', margin= {'t':0, 'b':0, 'l':0, 'r':50},
-                      showlegend= False, height=350, width=1000, paper_bgcolor='rgba(0,0,0,0)',                     
-                                 )
+    fig.update_layout(plot_bgcolor= 'rgba(0,0,0,0)', margin= {'t':0, 'b':0, 'l':0, 'r':50},   
+                      showlegend= False, height=350, width=1000, paper_bgcolor='rgba(0,0,0,0)',
+                      
+                      
+                     )
+
     
     return fig
 
 
-# In[16]:
+# In[24]:
 
 
 nos= []
@@ -301,17 +315,17 @@ def form_bar(tb, sn):
                                    marker= {'color': 'rgba(0, 74, 140, 1)',
                                            'line': {'color': 'rgba(0, 74, 140, 1)', 'width': 2}}),
                             ],
-                    layout= go.Layout(yaxis= {'dtick': 1, 'showgrid': True}, paper_bgcolor='rgba(0,0,0,0)',
-                                      barmode= 'stack', plot_bgcolor='rgba(0,0,0,0)',
-                                      xaxis =  {'showgrid': True},
+                    layout= go.Layout(yaxis= {'dtick': 1, 'showgrid': False}, paper_bgcolor='rgba(0,0,0,0)',
+                                      barmode= 'stack', plot_bgcolor='rgba(0,0,0,0)', 
+                                      xaxis =  {'showgrid': True, 'gridcolor': 'rgba(0, 74, 140, 0.5)'},
     ))
     figb1.update_layout(margin= dict(t=0, b=0, l=0, r=50), legend= dict(x= 0.5, y= 0.5, traceorder= 'normal'),
-                       legend_orientation="h", height=350,)
+                        legend_orientation="h", height=350,)
     return figb1
 #fig.update_layout(barmode='stack')
 
 
-# In[17]:
+# In[25]:
 
 
 ################################ Tab styling ################################
@@ -324,11 +338,12 @@ tab_selected_style = {
     'color': 'rgb(255, 255, 255)',
     'padding': '8px',
     'fontWeight': 'bold',
-    'fontFamily': 'Helvetica'
+    'fontFamily': 'Helvetica',
+    'border-radius': '5px'
 }
 
 
-# In[22]:
+# In[31]:
 
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
@@ -345,73 +360,74 @@ app.layout= html.Div([
         ###################### temp header ######################
         ##########################################################################
         html.Div([
-            html.H3(html.B('COVID-19')),
+            html.H3(html.B(['COVID-19'], style= {'color': '#fff'})),
             dcc.Dropdown(id= 'state', options= states, clearable= False,
                         value= states[n]['value'], optionHeight= 50),
             
         ], className='d-none d-sm-block', style= {'width': '16%', 'display': 'inline-block',
-                   'text-align': 'left', 'color': 'rgb(0, 74, 140)', 'padding-left': '2%'}),
+                   'text-align': 'left', 'color': '#000', 'padding-left': '2%'}),
         html.Div([
             html.H3(html.B('COVID-19@INDIA'))
         ], className= 'col-12 d-block d-sm-none', style= {'display': 'inline-block',
-                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+                   'text-align': 'right', 'color': '#fff'}),
         ##########################################################################
         html.Div([
             html.H3(html.B(id= 'cnfr')),
             html.H5('confirmed')
         ], className='col-md-2 col-6 d-block d-sm-none', style= {'display': 'inline-block',
-                   'text-align': 'left', 'color': 'rgb(0, 74, 140)'}),
+                   'text-align': 'left', 'color': '#fff'}),
         html.Div([
             html.H3(html.B(id= 'cnfrm')),
             html.H5('confirmed')
         ], className='d-none d-sm-block', style= {'width': '11%', 'display': 'inline-block',
-                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+                   'text-align': 'right', 'color': '#fff'}),
         ##########################################################################
         html.Div([
             html.H3(html.B(r)),
             html.H5('recovered')
         ], className='col-md-2 col-6 d-block d-sm-none', style= {'display': 'inline-block',
-                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+                   'text-align': 'right', 'color': '#fff'}),
         html.Div([
             html.H3(html.B(id= 'rcvr')),
             html.H5('recovered')
         ], className='d-none d-sm-block', style= {'width': '12%', 'display': 'inline-block',
-                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+                   'text-align': 'right', 'color': '#fff'}),
         ##########################################################################
         html.Div([
             html.H3(html.B(id= 'dth1')),
             html.H5('deceased')
         ], className='col-md-2 col-6 d-block d-sm-none', style= {'display': 'inline-block',
-                   'text-align': 'left', 'color': 'rgb(0, 74, 140)'}),
+                   'text-align': 'left', 'color': '#fff'}),
         html.Div([
             html.H3(html.B(id= 'dth')),
             html.H5('deceased')
         ], className='d-none d-sm-block', style= {'width': '12%', 'display': 'inline-block',
-                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+                   'text-align': 'right', 'color': '#fff'}),
         ##########################################################################
         html.Div([
             html.H3(html.B(n)),            
             html.H5('states')
         ], className='col-md-2 col-6 d-block d-sm-none', style= {'display': 'inline-block',
-                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+                   'text-align': 'right', 'color': '#fff'}),
         html.Div([
             html.H3(html.B(id= 'stts')),            
             html.H5(id= 'stt')
         ], className='d-none d-sm-block', style= {'width': '8%', 'display': 'inline-block',
-                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
+                   'text-align': 'right', 'color': '#fff'}),
         ##########################################################################        
         html.Div([
             html.Div([
                 dcc.Dropdown(id= 'helpdd1', options= hnames, clearable= False,
                              value= hnames[0]['value'], )
-            ], style= {'width': '45%', 'display': 'inline-block', 'padding-bottom': '2%'}),
+            ], style= {'width': '45%', 'display': 'inline-block', 'padding-bottom': '2%',
+                      'color': '#000'}),
             html.Div([                
                 html.H3(html.B(id= 'hname1', className= 'd-none d-sm-block')),
                 html.H6(updt),
             ], style= {'width': '55%', 'padding-left': '6%',
                        'display': 'inline-block', 'text-align': 'left'})
         ], className='d-none d-sm-block', style= {'width': '40%', 'display': 'inline-block', 'padding-left': '2%',
-                   'text-align': 'left', 'color': 'rgb(0, 74, 140)'}),
+                   'text-align': 'left', 'color': '#fff'}),
         html.Div([
             html.Div([dcc.Dropdown(id= 'helpdd2', options= hnames, 
                                    value= hnames[0]['value'], clearable= False)],
@@ -420,10 +436,11 @@ app.layout= html.Div([
                         'justify-content': 'right', 'display': 'inline-block'}),
             html.Div([html.H3(html.B(id= 'hname2'))], className='col-md-2 col-6 d-block d-sm-none',
                 style= {'display': 'inline-block',
-                   'text-align': 'right', 'color': 'rgb(0, 74, 140)'})           
+                   'text-align': 'right', 'color': '#fff'})           
         ], className= 'row', style= {'padding-left': '5%', 'text-align': 'right', 'color': 'rgb(0, 74, 140)'}),
-    ], className= 'row',
-        style= {'padding-left': '3%', 'width': '100%', 'padding-top': '1%'}),   
+    ], className= 'navbar navbar-dark',
+        style= {'padding-left': '3%', 'width': '100%', 'padding-top': '1%',
+               'background': 'rgb(0, 74, 140)'}),   
     ########################## Header ends here ##########################
     html.Div([
         html.Div([
@@ -434,74 +451,118 @@ app.layout= html.Div([
                     html.Div([
                         html.Iframe(id= 'smap', height= '420', width= '100%',
                                     style= {'border': 'None'})
-                    ], style= {'width': '45%', 'display': 'inline-block',
+                    ], style= {'width': '43%', 'display': 'inline-block',
                               'padding-top': '1%'}),
-                    html.Div([
-                        
+                    html.Div([], style= {'width': '2%', 'display': 'inline-block',
+                                         'padding-top': '1%'}),
+                    html.Div([                        
                         html.Div([
                             html.Div([
-                                html.H1(html.B(id= 'cnfrb')),
-                                html.H5('confirmed')
-                            ], style= {'width': '33%', 'display': 'inline-block',
-                                       'text-align': 'right', }),
+                                html.H2(html.B(id= 'pop'), style= {}),
+                                html.H6('population')
+                            ], className= 'rounded-lg',
+                                style= {'width': '25%', 'display': 'inline-block',
+                                       'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}),
+                            html.Div(style= {'width': '1%', 'display': 'inline-block'}),
                             html.Div([
-                                html.H1(html.B(id= 'rcvrb')),
-                                html.H5('recovered')
-                            ], style= {'width': '33%', 'display': 'inline-block',
-                                        'text-align': 'right', }),                            
+                                html.H2(html.B(id= 'cp'), style= {}),
+                                html.H6('confirmed %')
+                            ], className= 'rounded-lg',
+                                style= {'width': '25%', 'display': 'inline-block',
+                                       'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}),
+                            html.Div(style= {'width': '1%', 'display': 'inline-block'}),
                             html.Div([
-                                html.H1(html.B(id= 'dthb')),
-                                html.H5('deceased')
-                            ], style= { 'display': 'inline-block', #'padding-left': '45%',
-                                       'width': '33%', 'text-align': 'right', })
+                                html.H2(html.B(id= 'rp'), style= {}),
+                                html.H6('recovered %')
+                            ], className= 'rounded-lg',
+                                style= {'width': '24%', 'display': 'inline-block',
+                                       'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}),
+                            html.Div(style= {'width': '1%', 'display': 'inline-block'}),
+                            html.Div([
+                                html.H2(html.B(id= 'dp')),
+                                html.H6('death %')
+                            ], className= 'rounded-lg',
+                                style= {'width': '23%', 'display': 'inline-block',
+                                        'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}),      
+                            html.Div(style= {'width': '1%', 'display': 'inline-block'}),                            
                         ], style= {'width': '100%'}),
                         
                         html.Div([
                             html.Div([
                                 html.H2(html.B(id= 'tes')),
                                 html.H6('total tested')
-                            ], style= {'width': '30%', 'display': 'inline-block',
-                                       'text-align': 'right', }),                                                        
+                            ], className= 'rounded-lg',
+                                style= {'width': '25%', 'display': 'inline-block',
+                                       'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}),     
+                            html.Div(style= {'width': '1%', 'display': 'inline-block'}),
                             html.Div([
                                 html.H2(html.B(id= 'neg')),
                                 html.H6('tested negative')
-                            ], style= {'width': '25%', 'display': 'inline-block',
-                                       'text-align': 'right', }),                            
-                            
+                            ], className= 'rounded-lg',
+                                style= {'width': '25%', 'display': 'inline-block',
+                                       'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}),                            
+                            html.Div(style= {'width': '1%', 'display': 'inline-block'}),
                             html.Div([
                                 html.H2(html.B(id= 'pos')),
                                 html.H6('tested positive')
-                            ], style= {'width': '25%', 'display': 'inline-block',
-                                       'text-align': 'right', }),
-                            
+                            ], className= 'rounded-lg',
+                                style= {'width': '24%', 'display': 'inline-block',
+                                       'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}),
+                            html.Div(style= {'width': '1%', 'display': 'inline-block'}),
                             html.Div([
                                 html.H2(html.B(id= 'uncn')),
                                 html.H6('unconfirmed')
-                            ], style= {'width': '20%', 'display': 'inline-block',
-                                       'text-align': 'right', }),
+                            ], className= 'rounded-lg',
+                                style= {'width': '23%', 'display': 'inline-block',
+                                       'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}),
                             
-                        ], style= {'width': '100%', 'padding-top': '3%'}),
+                        ], style= {'width': '100%',}),
                         
                         html.Div([
-                            html.Div([
-                                html.H2(html.B(id= 'pop')),
-                                html.H6('population')
-                            ], style= {'width': '45%', 'display': 'inline-block',
-                                       'text-align': 'right', }),                                                        
-                            html.Div([
-                                html.H2(html.B(id= 'tpt')),
-                                html.H6('tests per 1000')
-                            ], style= {'width': '25%', 'display': 'inline-block',
-                                       'text-align': 'right', }),                            
                             
+                            html.Div([
+                                html.H2(html.B('19023')),
+                                html.H6('ventilators')
+                            ], className= 'rounded-lg',
+                                style= {'width': '25%', 'display': 'inline-block',
+                                       'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}), 
+                            html.Div(style= {'width': '1%', 'display': 'inline-block'}),
+                            html.Div([
+                                html.H2(html.B(tnidf.tail(1)['Total Samples Tested'])),
+                                html.H6('samples tested')
+                            ], className= 'rounded-lg',
+                                style= {'width': '25%', 'display': 'inline-block',
+                                       'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}),  
+                            html.Div(style= {'width': '1%', 'display': 'inline-block'}),           
                             html.Div([
                                 html.H2(html.B(id= 'tpr')),
                                 html.H6('positivity rate')
-                            ], style= {'width': '30%', 'display': 'inline-block',
-                                       'text-align': 'right', }), 
+                            ], className= 'rounded-lg',
+                                style= {'width': '24%', 'display': 'inline-block',
+                                       'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}),
+                            html.Div(style= {'width': '1%', 'display': 'inline-block'}),
+                            html.Div([
+                                html.H2(html.B(id= 'tpt')),
+                                html.H6('tests per 1000')
+                            ], className= 'rounded-lg',
+                                style= {'width': '23%', 'display': 'inline-block',
+                                       'text-align': 'right', 'background': 'rgb(0, 74, 140)',
+                                       'color': '#fff', 'padding-right': '1%'}),                            
                             
-                        ], style= {'width': '100%', 'padding-top': '3%'}),
-                        
+                             
+                                                        
+                        ], style= {'width': '100%', 'padding-top': '4%'}),                        
                         html.Div([
                             html.Div([
                                 html.H3(html.B('central helpline: +91-11-23978046'))
@@ -518,8 +579,7 @@ app.layout= html.Div([
                         ], style= {'width': '100%', 'padding-top': '3%'})
                         
                     ], style= {'width': '55%', 'display': 'inline-block', 'align': 'justify',
-                              'padding-top': '1%', 'color': 'rgb(0, 74, 140)'})
-                    
+                              'padding-top': '1%', 'color': 'rgb(0, 74, 140)'})                    
                 ], style=tab_style, selected_style=tab_selected_style),
                 
                 
@@ -610,30 +670,31 @@ app.layout= html.Div([
 def get_confirm(val):
     return df.loc[val]['Confirmed']
 ##########################################
-@app.callback(Output('cnfrb', 'children'),
+@app.callback(Output('cp', 'children'),
              [Input('state', 'value')])
 def get_confirm(val):
-    return df.loc[val]['Confirmed']
+    return round((df.loc[val]['Confirmed']/stndd.loc[val]['Population (Source: covid19india)'])*100, 5)
+##########################################
+@app.callback(Output('rp', 'children'),
+             [Input('state', 'value')])
+def get_confirm(val):
+    return round((df.loc[val]['Recovery']/df.loc[val]['Confirmed'])*100, 2)
 ##########################################
 @app.callback(Output('rcvr', 'children'),
              [Input('state', 'value')])
 def get_confirm(val):
     return df.loc[val]['Recovery']
 ##########################################
-@app.callback(Output('rcvrb', 'children'),
+@app.callback(Output('dp', 'children'),
              [Input('state', 'value')])
 def get_confirm(val):
-    return df.loc[val]['Recovery']
+    return round((df.loc[val]['Death']/df.loc[val]['Confirmed'])*100, 2)
 ##########################################
 @app.callback(Output('dth', 'children'),
              [Input('state', 'value')])
 def get_confirm(val):
     return df.loc[val]['Death']
 ##########################################
-@app.callback(Output('dthb', 'children'),
-             [Input('state', 'value')])
-def get_confirm(val):
-    return df.loc[val]['Death']
 ##########################################
 @app.callback(Output('tes', 'children'),
              [Input('state', 'value')])
@@ -655,11 +716,12 @@ def get_confirm(val):
 def get_confirm(val):
     return stndd.loc[val]['Unconfirmed']
 ##########################################
-##########################################
 @app.callback(Output('pop', 'children'),
              [Input('state', 'value')])
 def get_confirm(val):
-    return stndd.loc[val]['Population (Source: UIDAI)']
+    p= round(stndd.loc[val]['Population (Source: covid19india)']/1000000000, 3)
+    p= str(p) + 'b'
+    return p
 ##########################################
 ##########################################
 @app.callback(Output('tpr', 'children'),
@@ -687,6 +749,7 @@ def get_confirm(val):
     if val=='India':
         return 'states'
     return 'state'
+##########################################
 ##########################################
 @app.callback(Output('hname1', 'children'),
              [Input('helpdd1', 'value')])
