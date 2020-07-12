@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[4]:
+# In[1]:
 
 
 import pandas as pd
@@ -26,7 +26,7 @@ from dash.dependencies import Input, Output
 from plotly.subplots import make_subplots
 
 
-# In[5]:
+# In[2]:
 
 
 extract_contents = lambda row: [x.text.replace('\n', '') for x in row] 
@@ -40,28 +40,28 @@ all_rows = soup.find_all('tr')
 
 for row in all_rows:
     stat= extract_contents(row.find_all('td'))
-    if len(stat)==5:
+    print(stat)
+    if len(stat)>=5:
         stats.append(stat)
 
 
-# In[6]:
+# In[3]:
 
 
-headers= ['Sno', 'State', 'Confirmed', 'Recovery', 'Death']
+headers= ['Sno', 'State', 'Active',  'Recovery', 'Death', 'Confirmed']
 
 
-# In[7]:
+# In[4]:
 
 
 df= pd.DataFrame(stats, columns= headers).set_index('State')
 df.drop(['Sno'], axis= 1, inplace= True)
 df= df.replace({'#': ''}, regex=True)
 df= df.replace({'*': ''})
-df= df.astype(int)
-df.loc['India']= df.sum()
+#df= df.astype(int)
 
 
-# In[8]:
+# In[5]:
 
 
 n= len(df) - 1
@@ -70,14 +70,17 @@ d= df['Death'].tail(1)[0]
 r= df['Recovery'].tail(1)[0]
 
 
-# In[9]:
+# In[6]:
 
 
+df.rename({'Total#': 'India'}, axis='index', inplace= True)
+df.drop(['Cases being reassigned to states'], inplace= True)
+df= df.astype(int)
 df_a= df.drop(['India']).sort_values(['Confirmed'])
 df_d= df.drop(['India']).sort_values(['Confirmed'], ascending= False)
 
 
-# In[10]:
+# In[7]:
 
 
 hnames= []
@@ -88,7 +91,7 @@ hnames.append({'label': 'PG Hospital', 'value': 'pg'})
 hnames.append({'label': 'R G Kar', 'value': 'rg'})
 
 
-# In[11]:
+# In[8]:
 
 
 hphone= []
@@ -100,7 +103,7 @@ hphone.append({'label': 'rg', 'value': '033-25557656'})
 hphone.append({'label': 'nb', 'value': '0353 258 5478'})
 
 
-# In[12]:
+# In[9]:
 
 
 hloc= []
@@ -112,7 +115,7 @@ hloc.append({'label': 'rg', 'value': 'KB Sarani, Kolkata 700004'})
 hloc.append({'label': 'nb', 'value': 'Sushruta Nagar, Siliguri 734012'})
 
 
-# In[13]:
+# In[10]:
 
 
 heading1= 'COVID-19 @ INDIA'
@@ -124,7 +127,7 @@ wb_help= ' WB Helpline: 033-24312600'
 nb_help= ' NBMC: 0353 258 5478'
 
 
-# In[14]:
+# In[11]:
 
 
 st_ab= {
@@ -170,7 +173,7 @@ st_ab= {
 }
 
 
-# In[15]:
+# In[12]:
 
 
 updt= 'updated on ' + str(date.today())
@@ -179,7 +182,7 @@ for i in df.index.tolist():
     states.append({'label': i, 'value': i})
 
 
-# In[16]:
+# In[13]:
 
 
 indiats= 'https://api.covid19india.org/csv/latest/case_time_series.csv'
@@ -194,34 +197,36 @@ dsw['Date']= dsw['Date'].str[0:6].str.replace('-', ' ')
 #dsw['Date']
 
 
-# In[21]:
+# In[27]:
 
 
 statewise_tested_numbers_data= 'https://api.covid19india.org/csv/latest/statewise_tested_numbers_data.csv'
 stnd= pd.read_csv(statewise_tested_numbers_data)
 stndd= stnd.groupby(['State']).last().reset_index()
-stndd['Population (Source: covid19india)'].replace({',': ''}, regex= True, inplace= True)
+#stndd['Population NCP 2019 Projection'].replace({',': ''}, regex= True, inplace= True)
 stndd.set_index(['State'], inplace= True)
 stndd.loc['India', 'Total Tested']= stndd['Total Tested'].sum()
 stndd.loc['India', 'Positive']= stndd['Positive'].sum()
+stndd['Negative']= stndd['Negative'].str.strip('+')
+stndd['Negative']= stndd['Negative'].fillna(0).replace(' ', 0).astype(float, )
 stndd.loc['India', 'Negative']= stndd['Negative'].sum()
 stndd.loc['India', 'Unconfirmed']= stndd['Unconfirmed'].sum()
-stndd['Population (Source: covid19india)']= stndd['Population (Source: covid19india)'].dropna().astype(int)
-stndd.loc['India', 'Population (Source: covid19india)']= stndd['Population (Source: covid19india)'].sum()
+stndd['Population NCP 2019 Projection']= stndd['Population NCP 2019 Projection'].dropna().astype(int)
+stndd.loc['India', 'Population NCP 2019 Projection']= stndd['Population NCP 2019 Projection'].sum()
 stndd.loc['India', 'Tests per thousand']= stndd['Tests per thousand'].mean()
 
 stndd.loc['India', 'Test positivity rate']= round((stndd.loc['India', 'Positive']/stndd.loc['India', 'Total Tested'])*100, 2)
 stndd.loc['India', 'Test positivity rate']= str(stndd.loc['India', 'Test positivity rate']) + '%'
 
 
-# In[22]:
+# In[28]:
 
 
 tnid= 'https://api.covid19india.org/csv/latest/tested_numbers_icmr_data.csv'
 tnidf= pd.read_csv(tnid)
 
 
-# In[23]:
+# In[29]:
 
 
 dates= []
@@ -245,7 +250,7 @@ def get_cts(dt1, dt2):
     fig.update_xaxes(dtick= 7)
     fig.update_layout(plot_bgcolor= 'rgba(0,0,0,0)', margin= {'t':0, 'b':0, 'l':0, 'r':50},
                       hovermode= 'closest', hoverdistance= 50000, 
-                      showlegend= False, height=350, width=1000, paper_bgcolor='rgba(0,0,0,0)')
+                      showlegend= False, height=350, paper_bgcolor='rgba(0,0,0,0)')
     
     return fig
 #############################################################################    
@@ -270,7 +275,7 @@ def get_dts(dt1, dt2):
     fig.append_trace(rcvr, 2, 1)
     fig.append_trace(dth, 3, 1)
     fig.update_layout(plot_bgcolor= 'rgba(0,0,0,0)', margin= {'t':0, 'b':0, 'l':0, 'r':50},   
-                      showlegend= False, height=350, width=1000, paper_bgcolor='rgba(0,0,0,0)',
+                      showlegend= False, height=350, paper_bgcolor='rgba(0,0,0,0)',
                       
                       
                      )
@@ -279,7 +284,7 @@ def get_dts(dt1, dt2):
     return fig
 
 
-# In[24]:
+# In[30]:
 
 
 nos= []
@@ -325,7 +330,7 @@ def form_bar(tb, sn):
 #fig.update_layout(barmode='stack')
 
 
-# In[25]:
+# In[31]:
 
 
 ################################ Tab styling ################################
@@ -343,7 +348,20 @@ tab_selected_style = {
 }
 
 
-# In[31]:
+# In[32]:
+
+
+df= df.replace('', 0)
+df= df.astype(float)
+
+
+# In[33]:
+
+
+df
+
+
+# In[ ]:
 
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
@@ -362,7 +380,7 @@ app.layout= html.Div([
         html.Div([
             html.H3(html.B(['COVID-19'], style= {'color': '#fff'})),
             dcc.Dropdown(id= 'state', options= states, clearable= False,
-                        value= states[n]['value'], optionHeight= 50),
+                        value= states[n-1]['value'], optionHeight= 50),
             
         ], className='d-none d-sm-block', style= {'width': '16%', 'display': 'inline-block',
                    'text-align': 'left', 'color': '#000', 'padding-left': '2%'}),
@@ -611,14 +629,13 @@ app.layout= html.Div([
                 dcc.Tab(label='trends', value='tab2', children= [
                     html.Div([
                         html.Div([
-                            html.Div([                            
-                                
+                            html.Div([                                
                                 html.Div([html.H4('epidemic curve between',
                                               style= {'color': 'rgb(0, 74, 140)'})],
                                      style= {'display': 'inline-block',
                                              'padding-left': '3%'}),
-                                html.Div([                
-                                dcc.Dropdown(id= 'dt1', options= dates,
+                                html.Div([   
+                                    dcc.Dropdown(id= 'dt1', options= dates,
                                              value= dates[0]['value'], clearable= False)
                                 ], style= {'display': 'inline-block', 'padding-left': '2%',
                                           'width': '15%'}),
@@ -652,9 +669,9 @@ app.layout= html.Div([
                                      style= {'display': 'inline-block',
                                              'padding-left': '2%'}),
                             ]),                              
-                        ], style= {'padding-left': '0%', }),
+                        ], style= {'padding-left': '3%', }),
                         dcc.Graph(id= 'Line1', config= {'displayModeBar': False})
-                    ], style= {'padding-top': '1%', 'width': '100%'}, )
+                    ], style= {'padding-top': '1%', 'width': '100%', 'padding-left': '3%'}, )
                 ], style=tab_style, selected_style=tab_selected_style),
                 
             ], style= tabs_style,
@@ -673,7 +690,7 @@ def get_confirm(val):
 @app.callback(Output('cp', 'children'),
              [Input('state', 'value')])
 def get_confirm(val):
-    return round((df.loc[val]['Confirmed']/stndd.loc[val]['Population (Source: covid19india)'])*100, 5)
+    return round((df.loc[val]['Confirmed']/stndd.loc[val]['Population NCP 2019 Projection'])*100, 5)
 ##########################################
 @app.callback(Output('rp', 'children'),
              [Input('state', 'value')])
@@ -719,7 +736,7 @@ def get_confirm(val):
 @app.callback(Output('pop', 'children'),
              [Input('state', 'value')])
 def get_confirm(val):
-    p= round(stndd.loc[val]['Population (Source: covid19india)']/1000000000, 3)
+    p= round(stndd.loc[val]['Population NCP 2019 Projection']/1000000000, 3)
     p= str(p) + 'b'
     return p
 ##########################################
