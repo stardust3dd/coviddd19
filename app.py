@@ -74,7 +74,7 @@ r= df['Recovery'].tail(1)[0]
 
 
 df.rename({'Total#': 'India'}, axis='index', inplace= True)
-df.drop(['Cases being reassigned to states'], inplace= True)
+#df.drop(['Cases being reassigned to states'], inplace= True)
 df= df.astype(int)
 df_a= df.drop(['India']).sort_values(['Confirmed'])
 df_d= df.drop(['India']).sort_values(['Confirmed'], ascending= False)
